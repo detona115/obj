@@ -4,7 +4,7 @@ from django.db import models
 
 
 class Conta(models.Model):
-    conta_id = models.IntegerField(verbose_name="Numero da Conta")
+    conta_id = models.IntegerField(verbose_name="Numero da Conta", unique=True)
     saldo = models.FloatField(verbose_name="Saldo")
 
     def __str__(self):
