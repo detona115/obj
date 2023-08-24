@@ -48,9 +48,13 @@ class ContaViewset(ModelViewSet):
         valor = float(data["valor"])
 
         # validação do campo forma_pagamento e valor
-        
+
         try:
-            if not data["forma_pagamento"] and not data["conta_id"] and not data["valor"]:
+            if (
+                not data["forma_pagamento"]
+                and not data["conta_id"]
+                and not data["valor"]
+            ):
                 raise KeyError
             if valor <= 0:
                 raise ValueError
@@ -87,17 +91,13 @@ class ContaViewset(ModelViewSet):
 
         match data["forma_pagamento"]:
             case "P":
-                return self.processar_transacao(
-                    conta=conta, valor_decrementar=valor
-                )
+                return self.processar_transacao(conta=conta, valor_decrementar=valor)
 
             case "C":
                 porcentagem_cobrado = (
                     lambda porcentagem, valor: valor / 100 * porcentagem
                 )
-                valor_decrementar = valor + porcentagem_cobrado(
-                    5, valor
-                )
+                valor_decrementar = valor + porcentagem_cobrado(5, valor)
 
                 return self.processar_transacao(
                     conta=conta, valor_decrementar=valor_decrementar
@@ -107,9 +107,7 @@ class ContaViewset(ModelViewSet):
                 porcentagem_cobrado = (
                     lambda porcentagem, valor: valor / 100 * porcentagem
                 )
-                valor_decrementar = valor + porcentagem_cobrado(
-                    3, valor
-                )
+                valor_decrementar = valor + porcentagem_cobrado(3, valor)
 
                 return self.processar_transacao(
                     conta=conta, valor_decrementar=valor_decrementar
@@ -122,4 +120,3 @@ class ContaViewset(ModelViewSet):
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-
