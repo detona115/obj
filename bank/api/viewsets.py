@@ -44,11 +44,15 @@ class ContaViewset(ModelViewSet):
     def create(self, request):
         data = request.data
 
+        conta_id = int(data["conta_id"])
+        valor = float(data["valor"])
+
         # validação do campo forma_pagamento e valor
+        
         try:
-            if not data["forma_pagamento"] or not data["conta_id"] or not data["valor"]:
+            if not data["forma_pagamento"] and not data["conta_id"] and not data["valor"]:
                 raise KeyError
-            if data["valor"] <= 0:
+            if valor <= 0:
                 raise ValueError
         except KeyError:
             return Response(
@@ -63,12 +67,12 @@ class ContaViewset(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        data_to_serialize = {"conta_id": data["conta_id"], "saldo": data["valor"]}
+        data_to_serialize = {"conta_id": conta_id, "saldo": valor}
 
         # se não tiver conta cadastrada criar uma
         if (
             not self.queryset.exists()
-            or not self.queryset.filter(conta_id=data["conta_id"]).exists()
+            or not self.queryset.filter(conta_id=conta_id).exists()
         ):
             serializer = ContaSerializer(data=data_to_serialize)
             serializer.is_valid(raise_exception=True)
@@ -79,20 +83,20 @@ class ContaViewset(ModelViewSet):
         # efetuar as transaçoes
 
         # recuperar o valor atual do saldo
-        conta = self.queryset.filter(conta_id=data["conta_id"]).get()
+        conta = self.queryset.filter(conta_id=conta_id).get()
 
         match data["forma_pagamento"]:
             case "P":
                 return self.processar_transacao(
-                    conta=conta, valor_decrementar=data["valor"]
+                    conta=conta, valor_decrementar=valor
                 )
 
             case "C":
                 porcentagem_cobrado = (
                     lambda porcentagem, valor: valor / 100 * porcentagem
                 )
-                valor_decrementar = data["valor"] + porcentagem_cobrado(
-                    5, data["valor"]
+                valor_decrementar = valor + porcentagem_cobrado(
+                    5, valor
                 )
 
                 return self.processar_transacao(
@@ -103,8 +107,8 @@ class ContaViewset(ModelViewSet):
                 porcentagem_cobrado = (
                     lambda porcentagem, valor: valor / 100 * porcentagem
                 )
-                valor_decrementar = data["valor"] + porcentagem_cobrado(
-                    3, data["valor"]
+                valor_decrementar = valor + porcentagem_cobrado(
+                    3, valor
                 )
 
                 return self.processar_transacao(
