@@ -1,13 +1,13 @@
 from django.urls import path
 
-from .viewsets import ContaViewset, TransacaoViewset
+from .viewsets import ContaViewset
 
 
 conta = ContaViewset.as_view({
     'get': 'list',
 })
 
-transacao = TransacaoViewset.as_view({
+transacao = ContaViewset.as_view({
     'post': 'create',
 })
 

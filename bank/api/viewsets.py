@@ -2,29 +2,12 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
+
 from ..models import Conta
 from .serializers import ContaSerializer
 
 
 class ContaViewset(ModelViewSet):
-    def list(self, request, *args, **kwargs):
-        queryset = Conta.objects.all()
-        _id = request.query_params.get("id", None)
-
-        try:
-            int(_id)                
-        except ValueError:
-            return Response(
-                {"message": "O parametro 'id' deve ser um inteiro"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        
-        conta = get_object_or_404(queryset, conta_id=_id)
-        serializer = ContaSerializer(conta)
-        return Response(serializer.data)
-
-
-class TransacaoViewset(ModelViewSet):
     serializer_class = ContaSerializer
     queryset = Conta.objects.all()
 
@@ -38,18 +21,40 @@ class TransacaoViewset(ModelViewSet):
                 {"message": "Saldo insuficiente"}, status=status.HTTP_400_BAD_REQUEST
             )
 
+    def list(self, request, *args, **kwargs):
+        _id = request.query_params.get("id", None)
+
+        try:
+            int(_id)
+        except ValueError:
+            return Response(
+                {"message": "O parametro 'id' deve ser um inteiro"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except TypeError:
+            return Response(
+                {"message": "O parametro 'id' não foi fornecido"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        conta = get_object_or_404(self.queryset, conta_id=_id)
+        serializer = ContaSerializer(conta)
+        return Response(serializer.data)
+
     def create(self, request):
         data = request.data
 
         # validação do campo forma_pagamento e valor
         try:
-            if not data["forma_pagamento"]:
+            if not data["forma_pagamento"] or not data["conta_id"] or not data["valor"]:
                 raise KeyError
-            if data['valor'] <= 0:
+            if data["valor"] <= 0:
                 raise ValueError
         except KeyError:
             return Response(
-                {"message": "O paramêtro 'forma_pagamento' não está no payload"},
+                {
+                    "message": "O payload da transação deve ter os parametros 'forma_pagamento', 'conta_id' e 'valor'"
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except ValueError:
@@ -62,7 +67,7 @@ class TransacaoViewset(ModelViewSet):
 
         # se não tiver conta cadastrada criar uma
         if (
-            not self.queryset.exists() 
+            not self.queryset.exists()
             or not self.queryset.filter(conta_id=data["conta_id"]).exists()
         ):
             serializer = ContaSerializer(data=data_to_serialize)
@@ -113,3 +118,4 @@ class TransacaoViewset(ModelViewSet):
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+
