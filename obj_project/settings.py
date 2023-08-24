@@ -40,6 +40,9 @@ INSTALLED_APPS = [
 
     # Local
     'bank.apps.BankConfig',
+
+    # Third-party
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
